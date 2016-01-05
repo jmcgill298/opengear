@@ -1,0 +1,35 @@
+import sys
+import paramiko
+import re
+from getpass import getpass
+
+#open files and gather creds
+og_list = open('opengear-list.txt', 'r').read().split()
+csv = open('opengear.csv', 'w')
+un = raw_input('>please type your username: ')
+pw = getpass('>please type your password: ')
+
+#prepare ssh sessions
+ssh = paramiko.SSHClient()
+ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+#loop through opengears and connct
+port_label = []
+for og in og_list:
+	curr_og = og.split('.')[0]
+	ssh.connect(og, username=un, password=pw)
+	stdin, stdout, stderr = ssh.exec_command('config -g config.ports | grep label')
+	
+	#loop through config data and extract port/label
+	for line in stdout.readlines():
+		data = re.findall('config.ports.(port[0-9]+).label (\S+)', line.strip())
+		port_label.append(data.pop())
+		
+	#write data to file
+	for port,device in port_label:
+		csv.write(str(port) + ',')
+		csv.write(str(device + ','))
+		csv.write(curr_og + '\n')
+	stdin.close()
+
+csv.close()
