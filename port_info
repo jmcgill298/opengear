@@ -3,33 +3,55 @@ import paramiko
 import re
 from getpass import getpass
 
-#open files and gather creds
-og_list = open('opengear-list.txt', 'r').read().split()
+#open csv and gather creds
 csv = open('opengear.csv', 'w')
 un = raw_input('>please type your username: ')
 pw = getpass('>please type your password: ')
+lh_un = raw_input('>please type the username for Lighthouse: ')
+lh_pw = getpass('>please type the password for Lighthouse: ')
 
-#prepare ssh sessions
+#collect OGs from Lighthouse
+print "Attempting to gather OpenGear TS' via Lighthouse"
+lighthouse_host   = 'lighthouse.net.tfayd.com'
 ssh = paramiko.SSHClient()
-ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+ssh.set_missing_host_key_policy(paramiko.WarningPolicy())
+ssh.connect(lighthouse_host, username=lh_un, password=lh_pw)
+stdin, stdout, stderr = ssh.exec_command("node-info")
+stdin.flush()
+output = stdout.readlines()
+ssh.close()
+
+og_list = []
+for item in output:
+    if len(re.findall('Name = (.*)', item)) != 0:
+            og_list.append(re.findall('Name = (.*)', item)[0] + '.net.tfayd.com')
 
 #loop through opengears and connct
 port_label = []
 for og in og_list:
 	curr_og = og.split('.')[0]
-	ssh.connect(og, username=un, password=pw)
-	stdin, stdout, stderr = ssh.exec_command('config -g config.ports | grep label')
-	
-	#loop through config data and extract port/label
-	for line in stdout.readlines():
-		data = re.findall('config.ports.(port[0-9]+).label (\S+)', line.strip())
-		port_label.append(data.pop())
+	try:
+		#prepare ssh sessions
+		ssh = paramiko.SSHClient()
+		ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+		ssh.connect(og, username=un, password=pw)
+		stdin, stdout, stderr = ssh.exec_command('config -g config.ports | grep label')
 		
-	#write data to file
-	for port,device in port_label:
-		csv.write(str(port) + ',')
-		csv.write(str(device + ','))
-		csv.write(curr_og + '\n')
-	stdin.close()
+		#loop through config data and extract port/label
+		for line in stdout.readlines():
+			data = re.findall('config.ports.(port[0-9]+).label (\S+)', line.strip())
+			port_label.append(data.pop())
+			ssh.close()
+			
+		#write data to file
+		for port,device in port_label:
+			csv.write(str(port) + ',')
+			csv.write(str(device + ','))
+			csv.write(curr_og + '\n')
+			
+	except Exception:
+          print "Could not log into " + curr_og
+
 
 csv.close()
+print "Script has completed"
