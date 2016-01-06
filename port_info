@@ -12,7 +12,7 @@ lh_pw = getpass('>please type the password for Lighthouse: ')
 
 #collect OGs from Lighthouse
 print "Attempting to gather OpenGear TS' via Lighthouse"
-lighthouse_host   = 'lighthouse.net.tfayd.com'
+lighthouse_host   = '100.112.218.140'
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.WarningPolicy())
 ssh.connect(lighthouse_host, username=lh_un, password=lh_pw)
@@ -27,8 +27,9 @@ for item in output:
             og_list.append(re.findall('Name = (.*)', item)[0] + '.net.tfayd.com')
 
 #loop through opengears and connct
-port_label = []
+
 for og in og_list:
+	port_label = []
 	curr_og = og.split('.')[0]
 	try:
 		#prepare ssh sessions
@@ -39,7 +40,7 @@ for og in og_list:
 		
 		#loop through config data and extract port/label
 		for line in stdout.readlines():
-			data = re.findall('config.ports.(port[0-9]+).label (\S+)', line.strip())
+			data = re.findall('config.ports.port([0-9]+).label\s+(\S+)', line.strip())
 			port_label.append(data.pop())
 			ssh.close()
 			
@@ -54,4 +55,4 @@ for og in og_list:
 
 
 csv.close()
-print "Script has completed"
+print "script has completed"
