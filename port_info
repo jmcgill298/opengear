@@ -12,7 +12,7 @@ lh_pw = getpass('>please type the password for Lighthouse: ')
 
 #collect OGs from Lighthouse
 print "Attempting to gather OpenGear TS' via Lighthouse"
-lighthouse_host   = '100.112.218.140'
+lighthouse_host   = raw_input('>What would you like to use for lighthouse: ')
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.WarningPolicy())
 ssh.connect(lighthouse_host, username=lh_un, password=lh_pw)
