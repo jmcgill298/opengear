@@ -21,6 +21,7 @@ stdin.flush()
 output = stdout.readlines()
 ssh.close()
 
+#create list of OGs
 og_list = []
 for item in output:
     if len(re.findall('Name = (.*)', item)) != 0:
